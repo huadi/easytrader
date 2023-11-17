@@ -2,13 +2,14 @@
 import abc
 import io
 import tempfile
+import time
 from io import StringIO
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
-import pywinauto.keyboard
 import pywinauto
 import pywinauto.clipboard
+import pywinauto.keyboard
 
 from easytrader.log import logger
 from easytrader.utils.captcha import captcha_recognize
@@ -68,11 +69,15 @@ class BaseStrategy(IGridStrategy):
             pass
 
 
+def paused(s=5):
+    time.sleep(s)
+
+
 class Copy(BaseStrategy):
     """
     通过复制 grid 内容到剪切板再读取来获取 grid 内容
     """
-
+    USE_TYPE_KEYS = True
     _need_captcha_reg = True
 
     def get(self, control_id: int) -> List[Dict]:
@@ -96,46 +101,40 @@ class Copy(BaseStrategy):
 
     def _get_clipboard_data(self) -> str:
         if Copy._need_captcha_reg:
-            if (
-                    self._trader.app.top_window().window(class_name="Static", title_re="验证码").exists(timeout=1)
-            ):
+            if self._trader.app.top_window().window(class_name="Static", title_re="验证码").exists(timeout=1):
                 file_path = "tmp.png"
-                count = 5
+                count = 10
                 found = False
                 while count > 0:
-                    self._trader.app.top_window().window(
-                        control_id=0x965, class_name="Static"
-                    ).capture_as_image().save(
-                        file_path
-                    )  # 保存验证码
-
+                    self._trader.app.top_window().window(control_id=0x965, class_name="Static").capture_as_image().save(
+                        file_path)  # 保存验证码
                     captcha_num = captcha_recognize(file_path).strip()  # 识别验证码
                     captcha_num = "".join(captcha_num.split())
                     logger.info("captcha result-->" + captcha_num)
                     if len(captcha_num) == 4:
-                        self._trader.app.top_window().window(
-                            control_id=0x964, class_name="Edit"
-                        ).set_text(
-                            captcha_num
-                        )  # 模拟输入验证码
+                        captcha_input = self._trader.app.top_window().window(control_id=0x964, class_name="Edit")
+
+                        if Copy.USE_TYPE_KEYS:
+                            for _ in range(4):  # clear the text field
+                                captcha_input.type_keys('{BACKSPACE}')
+
+                            captcha_input.type_keys(captcha_num)
+                        else:
+                            captcha_input.set_text('')
+                            captcha_input.set_text(captcha_num)
 
                         self._trader.app.top_window().set_focus()
                         pywinauto.keyboard.SendKeys("{ENTER}")  # 模拟发送enter，点击确定
                         try:
-                            logger.info(
-                                self._trader.app.top_window()
-                                    .window(control_id=0x966, class_name="Static")
-                                    .window_text()
-                            )
+                            logger.info(self._trader.app.top_window().window(control_id=0x966,
+                                                                             class_name="Static").window_text())
                         except Exception as ex:  # 窗体消失
                             logger.exception(ex)
                             found = True
                             break
                     count -= 1
                     self._trader.wait(0.1)
-                    self._trader.app.top_window().window(
-                        control_id=0x965, class_name="Static"
-                    ).click()
+                    self._trader.app.top_window().window(control_id=0x965, class_name="Static").click()
                 if not found:
                     self._trader.app.top_window().Button2.click()  # 点击取消
             else:
