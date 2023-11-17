@@ -117,6 +117,7 @@ class ClientTrader(IClientTrader):
         self._close_prompt_windows()
         self._main = self._app.top_window()
         self._init_toolbar()
+        self.enable_type_keys_for_editor()
 
     @property
     def broker_type(self):

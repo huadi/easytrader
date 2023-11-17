@@ -30,7 +30,8 @@ def post_prepare():
     json_data = request.get_json(force=True)
 
     user = api.use(json_data.pop("broker"))
-    user.prepare(**json_data)
+    hasattr(user, 'prepare') and user.prepare(**json_data)
+    hasattr(user, 'connect') and user.connect(json_data['exe_path'])
 
     global_store["user"] = user
     return jsonify({"msg": "login success"}), 201
