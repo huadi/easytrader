@@ -139,7 +139,7 @@ class Copy(BaseStrategy):
                     self._trader.app.top_window().Button2.click()  # 点击取消
             else:
                 Copy._need_captcha_reg = False
-        count = 5
+        count = 10
         while count > 0:
             try:
                 return pywinauto.clipboard.GetData()
