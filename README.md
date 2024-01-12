@@ -1,5 +1,12 @@
 # easytrader
 
+How to start
+
+```shell
+cd <path to code base dir>
+python -m easytrader
+```
+
 [![Package](https://img.shields.io/pypi/v/easytrader.svg)](https://pypi.python.org/pypi/easytrader)
 [![Travis](https://img.shields.io/travis/shidenggui/easytrader.svg)](https://travis-ci.org/shidenggui/easytrader)
 [![License](https://img.shields.io/github/license/shidenggui/easytrader.svg)](https://github.com/shidenggui/easytrader/blob/master/LICENSE)
